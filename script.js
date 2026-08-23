@@ -3,23 +3,20 @@
         // --- 🔄 نظام التحديث الإجباري الذكي ---
     async function checkAppUpdate() {
         try {
-            const currentAppVersion = "1.0"; // عدل الرقم ده لو نزلت نسخة جديدة (مثلاً 1.1)
+            const currentAppVersion = "1.0"; 
             const response = await fetch('version.json?t=' + new Date().getTime());
             const data = await response.json();
 
             if (data.version && data.version > currentAppVersion) {
-                // لو شغال في متصفح (موقع) ممكن نعمل تحديث للصفحة تلقائي
                 if (!window.navigator.standalone && !window.matchMedia('(display-mode: standalone)').matches) {
-                    // اختياري للموقع: window.location.reload();
+                    // اختياري للموقع
                 }
                 
-                // إظهار شاشة التحديث الإجباري للتطبيق (APK)
                 const updateOverlay = document.getElementById("updateOverlay");
                 if (updateOverlay) {
                     updateOverlay.classList.remove("hidden");
                 }
                 
-                // حط هنا رابط تحميل الـ APK الجديد بتاعك (موقع التحميل أو رابط مباشر)
                 const downloadBtn = document.getElementById("downloadUpdateBtn");
                 if (downloadBtn) {
                     downloadBtn.href = "https://your-website.com/download-page.html"; 
@@ -30,9 +27,7 @@
         }
     }
 
-    // تشغيل فحص التحديث أول ما التطبيق يفتح
     checkAppUpdate();
-
 
     // --- 🔒 طبقة الحماية القصوى ضد الـ Console والـ DevTools ---
     document.addEventListener('contextmenu', function (e) {
@@ -49,7 +44,6 @@
         }
     });
 
-    // --- منع سحب الشاشة للأسفل للتحديث نهائياً داخل التطبيق ---
     document.addEventListener('touchmove', function (e) {
         if (e.scale !== 1) { return; }
         if (e.target.closest('#gameCanvas')) {
@@ -86,20 +80,17 @@
     let gameRunning = false;
     let animationFrameId = null;
 
-    // نظام المستويات المفتوحة
     let unlockedLevel = localStorage.getItem('samball_unlocked') ? parseInt(localStorage.getItem('samball_unlocked')) : 1;
 
-    // نظام كرات المتجر
     let equippedBall = localStorage.getItem('samball_ball') || 'default';
     let ownedBalls = JSON.parse(localStorage.getItem('samball_owned_balls')) || ['default'];
 
-    // ⚡ سرعات المستويات الموزونة لمنع التعليق
     const speeds = {
-        1: { dx: 4,   dy: -5 },   // السهل
-        2: { dx: 5,   dy: -7 },   // المتوسط
-        3: { dx: 7,   dy: -10 },  // الصعب
-        4: { dx: 9,   dy: -15 },  // الصعب جداً
-        5: { dx: 25,  dy: -100 }  // المستحيل
+        1: { dx: 4,   dy: -5 },
+        2: { dx: 5,   dy: -7 },
+        3: { dx: 7,   dy: -10 },
+        4: { dx: 9,   dy: -15 },
+        5: { dx: 25,  dy: -100 }
     };
 
     const modeNames = {
@@ -122,8 +113,6 @@
 
     let rightPressed = false;
     let leftPressed = false;
-
-    // مصفوفة لحفظ تأثير ذيل الكرة
     let ballTrail = [];
 
     // --- التنقل بين الشاشات ---
@@ -134,10 +123,16 @@
     }
 
     function backToHome() {
+        gameRunning = false;
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
         if (levelMenuScreen) levelMenuScreen.classList.add("hidden");
         if (shopScreen) shopScreen.classList.add("hidden");
-        if (celebrationScreen) celebrationScreen.classList.remove("hidden");
+        if (gameScreen) gameScreen.classList.add("hidden");
+        if (celebrationScreen) celebrationScreen.classList.add("hidden"); // تأكيد إخفاء شاشة الاحتفال
         if (homeScreen) homeScreen.classList.remove("hidden");
+        
+        if (overlay) overlay.classList.add("hidden");
     }
 
     function openShopMenu() {
@@ -146,7 +141,6 @@
         updateShopUI();
     }
 
-    // --- نظام المتجر والعملات ---
     function updateCoinsDisplay() {
         if (gameCoinsEl) gameCoinsEl.innerText = coins;
         if (totalCoinsEl) totalCoinsEl.innerText = coins;
@@ -209,7 +203,6 @@
         }
     }
 
-    // --- أزرار المستويات ---
     function updateLevelButtons() {
         for (let i = 1; i <= 5; i++) {
             let btn = document.getElementById(`btn-level-${i}`);
@@ -274,7 +267,6 @@
         if (overlay) overlay.classList.add("hidden");
     }
 
-    // --- التحكم بالحركة ---
     document.addEventListener("keydown", (e) => {
         if (e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
         else if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
@@ -325,7 +317,6 @@
         }, { passive: false });
     }
 
-    // --- منطق اللعبة ---
     const brickRowCount = 5;
     const brickColumnCount = 7;
     const brickWidth = 72;
@@ -368,7 +359,6 @@
         y = canvas.height - 40;
         const baseSpeed = speeds[currentDifficulty];
         
-        // زاوية انطلاق مضمونة عشان ما تبدأش أفقية أو تعلّق
         let direction = Math.random() > 0.5 ? 1 : -1;
         dx = baseSpeed.dx * direction;
         dy = baseSpeed.dy;
@@ -514,26 +504,19 @@
         drawPaddle();
         collisionDetection();
 
-        // ارتداء الجدران الجانبية
         if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
             dx = -dx;
         }
         
-        // اصطدام السقف
         if (y + dy < ballRadius) {
             dy = -dy;
         } 
-        // اصطدام القاع أو المضرب
         else if (y + dy > canvas.height - ballRadius - 5) {
             if (x > paddleX && x < paddleX + paddleWidth) {
-                // حساب نقطة الاصطدام بالمضرب
                 let hitPoint = x - (paddleX + paddleWidth / 2);
                 let currentSpeed = speeds[currentDifficulty];
                 
-                // معادلة فيزياء لمنع التعليق
                 let newDx = hitPoint * 0.2 * (Math.abs(currentSpeed.dy) / 5);
-                
-                // ضمان حد أدنى للسرعة الأفقية (عشان ما تمشيش خط مستقيم رأسي وتعلّق)
                 let minDx = 2.5;
                 if (Math.abs(newDx) < minDx) {
                     newDx = newDx >= 0 ? minDx : -minDx;
@@ -593,7 +576,6 @@
         });
     }
 
-    // --- 🔑 ربط جميع الدوال بالـ Window ---
     window.openGameMenu = openGameMenu;
     window.backToHome = backToHome;
     window.openShopMenu = openShopMenu;
